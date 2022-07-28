@@ -8,4 +8,4 @@ WORKDIR /app
 COPY . ./
 RUN chmod -R 777 /app
 RUN pip install -r /app/requirements.txt
-RUN streamlit run --server.port 8080 --server.enableCORS false streamlit_app.py
+CMD streamlit run --server.port 8080 --server.enableCORS false streamlit_app.py
