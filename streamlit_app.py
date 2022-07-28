@@ -1,36 +1,122 @@
-from functools import cache
-from control_model.control_model_query import Control_Model_Query
-from control_model.connection_base import ETDLP_Control_Model_Base
-from control_model.close_connection import Close_Control_ModeL_Connection
-
+from psycopg2 import OperationalError
+from dotenv import load_dotenv
 import streamlit as st
 import pandas as pd
 import datetime
+import psycopg2
+import os
+
+class ETDLP_Control_Model:
+    def create_connection():
+        load_dotenv()
+        connection = None
+        try:
+            connection = psycopg2.connect(
+                database=os.getenv("db_name"),
+                user=os.getenv("db_user"),
+                password=os.getenv("db_password"),
+                host=os.getenv("db_host"),
+                port=os.getenv("db_port")
+                )
+            
+            print("Connection to PostgreSQL DB successful")
+            
+        except OperationalError as e:
+            print(f"The error '{e}' occurred")
+            
+        return connection
+
+    @staticmethod
+    def  query_db(self, query):
+            
+        connection = None
+        
+        try:    
+            connection = self.connection
+            connection.autocommit = True
+            cursor = connection.cursor()
+            postgres_insert_query = f"{query}"
+            cursor.execute(postgres_insert_query)
+            result = cursor.fetchall()
+        except (Exception, psycopg2.OperationalError) as e:
+            print(f"The error '{e}' occurred")
+            connection.rollback()
+            raise
+        return result
+
+    @staticmethod
+    def close_connection(self):
+        try:    
+            connection = self.connection
+            cursor = connection.cursor()
+            if connection is not None:
+                cursor.close()
+                connection.close()
+                print("Connection to PostgreSQL DB was closed successful")
+
+        except (Exception, psycopg2.OperationalError) as e:
+            print(f"The error '{e}' occurred")
+            connection.rollback()
+            raise
+        
+        return True
 
 class Dashboard:
     def __init__(self):
         st.markdown("# ETDLP - Dashboard 🎈")
-#        st.sidebar.markdown("# ETDLP - Dashboard 🎈")
         st.write("Monitoreo de toda la data extraída y almacenada por ETDLP")
-        self.connection = ETDLP_Control_Model_Base.create_connection()
+        self.connection = ETDLP_Control_Model.create_connection()
 
     def get_entidades(self, tipo_registro):
         query = f"SELECT entidad FROM control_table ct  where tipo_registro='{tipo_registro}' GROUP by entidad;"
-        result = Control_Model_Query.query_db(self, query)
+        result = ETDLP_Control_Model.query_db(self, query)
         cleaned_result = [values for tuples in result for values in tuples]
-        Close_Control_ModeL_Connection
+        ETDLP_Control_Model.close_connection
         return cleaned_result
 
     def get_tipo_registro(self):
         query = f"SELECT tipo_registro FROM control_table ct GROUP BY tipo_registro;"
-        result = Control_Model_Query.query_db(self, query)
+        result = ETDLP_Control_Model.query_db(self, query)
         cleaned_result = [values for tuples in result for values in tuples]
-        Close_Control_ModeL_Connection
+        ETDLP_Control_Model.close_connection
         return cleaned_result
 
     def get_csv(self, tipo_registro, entidad):
         query = f"SELECT * FROM control_table ct WHERE tipo_registro='{tipo_registro}' AND entidad='{entidad}';"
         return pd.read_sql_query(query, self.connection)
+
+    @staticmethod
+    def get_nota(tipo_registro):
+        #Returns the index of the searched file
+        if tipo_registro=="OrdenesDeServicio":
+            nota = "Nota: El primer registro de la tabla es solo una imagen, no las columnas.\n"
+        elif tipo_registro=="visita":
+            nota = "Nota: El primer registro de la tabla es solo un título, no las columnas.\n"
+        elif tipo_registro=="planilla":
+            nota = "Nota: Todo el dataframe es data. No es necesario eliminar la primera fila.\n"
+        return nota
+
+    @staticmethod
+    def get_columns(tipo_registro):
+        #Returns the columns of the searched file
+        if tipo_registro=="OrdenesDeServicio":
+            columns = "Columns : [ENTIDAD, RUC_ENTIDAD, FECHA_REGISTRO, FECHA_DE_EMISION, FECHA_COMPROMISO_PRESUPUESTAL, FECHA_DE_NOTIFICACION, TIPOORDEN, NRO_DE_ORDEN, ORDEN, DESCRIPCION_ORDEN, MONEDA, MONTO_TOTAL_ORDEN_ORIGINAL, OBJETOCONTRACTUAL, ESTADOCONTRATACION, TIPODECONTRATACION, DEPARTAMENTO__ENTIDAD, RUC_CONTRATISTA, NOMBRE_RAZON_CONTRATISTA]\n"
+        elif tipo_registro=="visita":
+            columns = "Columns: [Fecha, Entidad visitada, Visitante, Documento del visitante, Entidad del visitante, Funcionario visitado, Hora Ingreso, Hora Salida, Motivo, Lugar específico, Observación]\n"
+        elif tipo_registro=="planilla":
+            columns = "Columns: [ENTIDAD,PK_ID_PERSONAL,VC_PERSONAL_RUC_ENTIDAD,IN_PERSONAL_ANNO,IN_PERSONAL_MES,VC_PERSONAL_REGIMEN_LABORAL,VC_PERSONAL_PATERNO,VC_PERSONAL_MATERNO,VC_PERSONAL_NOMBRES,VC_PERSONAL_CARGO,VC_PERSONAL_DEPENDENCIA,MO_PERSONAL_REMUNERACIONES,MO_PERSONAL_HONORARIOS,MO_PERSONAL_INCENTIVO,MO_PERSONAL_GRATIFICACION,MO_PERSONAL_OTROS_BENEFICIOS,MO_PERSONAL_TOTAL,VC_PERSONAL_OBSERVACIONES,FEC_REG]\n"
+        return columns
+
+    @staticmethod
+    def get_length(tipo_registro):
+        #Returns the length of the searched file
+        if tipo_registro=="OrdenesDeServicio":
+            n_columns = "N_Columns: 18"
+        elif tipo_registro=="visita":
+            n_columns = "N_Columns: 11"
+        elif tipo_registro=="planilla":
+            n_columns = "N_Columns: 19"
+        return n_columns
 
     @staticmethod
     def last_n_day_of_month(n):
@@ -45,8 +131,6 @@ class Dashboard:
     @staticmethod
     def status(tipo_registro, data):
         today = datetime.datetime.now().strftime("%Y-%m-%d")
-        st.write(today)
-        st.write(Dashboard.last_n_day_of_month(15).strftime("%Y-%m"))
         if tipo_registro=="visita" and today in data["fecha_ejecucion"].iloc[-1]: # Checking if the last update was today.
             return "✔️"
         elif tipo_registro=="planilla" and Dashboard.last_n_day_of_month(15).strftime("%Y%m") in data["fecha_de_la_info"].iloc[-1]:
@@ -69,6 +153,7 @@ class Dashboard:
         col3.metric("Última actualización",
                     value=data["fecha_ejecucion"].iloc[-1])
         col4.metric("Status", value=Dashboard.status(tipo_registro, data))
+        st.code(Dashboard.get_nota(tipo_registro) + Dashboard.get_columns(tipo_registro) + Dashboard.get_length(tipo_registro))
         st.write(data)
 
 if __name__ == '__main__':
