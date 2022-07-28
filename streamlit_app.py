@@ -7,7 +7,6 @@ import psycopg2
 import os
 
 class ETDLP_Control_Model:
-    @st.experimental_singleton
     def create_connection():
         load_dotenv()
         connection = psycopg2.connect(
