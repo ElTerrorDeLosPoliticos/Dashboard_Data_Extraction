@@ -5,8 +5,6 @@ ENV PYTHONUNBUFFERED True
 
 RUN apt-get update
 RUN service postgresql start
-RUN su - postgres
-RUN psql
 RUN pip install --upgrade pip
 
 EXPOSE 8080
