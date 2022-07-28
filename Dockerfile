@@ -5,7 +5,7 @@ ENV PYTHONUNBUFFERED True
 
 RUN apt-get update
 RUN apt-get install postgresql -y
-RUN ln -s /tmp/.s.PGSQL.5432 /var/run/postgresql/.s.PGSQL.5432
+RUN ln -s /var/run/postgresql/.s.PGSQL.5432 /tmp/.s.PGSQL.5432
 RUN pip install --upgrade pip
 
 EXPOSE 8080
