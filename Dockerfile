@@ -4,7 +4,10 @@ FROM python:3.8
 ENV PYTHONUNBUFFERED True
 
 RUN apt-get update
-RUN service postgresql start
+RUN apt-get install postgresql -y
+RUN chmod 700 -R /var/lib/postgresql/10/main
+RUN -i -u postgres
+RUN /usr/lib/postgresql/10/bin/pg_ctl restart -D /var/lib/postgresql/10/main
 RUN pip install --upgrade pip
 
 EXPOSE 8080
