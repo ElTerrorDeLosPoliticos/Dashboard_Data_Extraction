@@ -9,56 +9,35 @@ import os
 class ETDLP_Control_Model:
     def create_connection():
         load_dotenv()
-        connection = None
-        try:
-            connection = psycopg2.connect(
-                database=os.getenv("db_name"),
-                user=os.getenv("db_user"),
-                password=os.getenv("db_password"),
-                host=os.getenv("db_host"),
-                port=os.getenv("db_port")
-                )
-            
-            print("Connection to PostgreSQL DB successful")
-            
-        except OperationalError as e:
-            print(f"The error '{e}' occurred")
-            
+        connection = psycopg2.connect(
+            database=os.getenv("db_name"),
+            user=os.getenv("db_user"),
+            password=os.getenv("db_password"),
+            host=os.getenv("db_host"),
+            port=os.getenv("db_port")
+            )
+        
+        print("Connection to PostgreSQL DB successful")                 
         return connection
 
     @staticmethod
     def  query_db(self, query):
-            
-        connection = None
-        
-        try:    
-            connection = self.connection
-            connection.autocommit = True
-            cursor = connection.cursor()
-            postgres_insert_query = f"{query}"
-            cursor.execute(postgres_insert_query)
-            result = cursor.fetchall()
-        except (Exception, psycopg2.OperationalError) as e:
-            print(f"The error '{e}' occurred")
-            connection.rollback()
-            raise
+        connection = self.connection
+        connection.autocommit = True
+        cursor = connection.cursor()
+        postgres_insert_query = f"{query}"
+        cursor.execute(postgres_insert_query)
+        result = cursor.fetchall()
         return result
 
     @staticmethod
     def close_connection(self):
-        try:    
-            connection = self.connection
-            cursor = connection.cursor()
-            if connection is not None:
-                cursor.close()
-                connection.close()
-                print("Connection to PostgreSQL DB was closed successful")
-
-        except (Exception, psycopg2.OperationalError) as e:
-            print(f"The error '{e}' occurred")
-            connection.rollback()
-            raise
-        
+        connection = self.connection
+        cursor = connection.cursor()
+        if connection is not None:
+            cursor.close()
+            connection.close()
+            print("Connection to PostgreSQL DB was closed successful")       
         return True
 
 class Dashboard:
