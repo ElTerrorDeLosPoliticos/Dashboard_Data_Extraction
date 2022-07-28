@@ -4,7 +4,7 @@ FROM python:3.8
 ENV PYTHONUNBUFFERED True
 
 RUN apt-get update
-RUN sudo apt-get install postgresql-9.1
+RUN systemctl restart postgresql
 RUN pip install --upgrade pip
 
 EXPOSE 8080
