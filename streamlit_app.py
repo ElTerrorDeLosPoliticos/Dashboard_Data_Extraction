@@ -98,23 +98,18 @@ class Dashboard:
         return n_columns
 
     @staticmethod
-    def last_n_day_of_month(n):
+    def prev_month():
         today = datetime.datetime.now()
-        if today.day < n:
-            return (today.replace(day=1) - datetime.timedelta(days=1)).replace(day=n)
-        elif today.day == n:
-            return today
-        else:
-            return today.replace(day=n)
+        return (today.replace(day=1) - datetime.timedelta(days=1))
 
     @staticmethod
     def status(tipo_registro, data):
         today = datetime.datetime.now().strftime("%Y-%m-%d")
         if tipo_registro=="visita" and today in data["fecha_ejecucion"].iloc[-1]: # Checking if the last update was today.
             return "✔️"
-        elif tipo_registro=="planilla" and Dashboard.last_n_day_of_month(15).strftime("%Y%m") in data["fecha_de_la_info"].iloc[-1]:
+        elif tipo_registro=="planilla" and Dashboard.prev_month().strftime("%Y%m") in data["fecha_de_la_info"].iloc[-1]: # Updates are on 28th
             return "✔️"
-        elif tipo_registro=="OrdenesDeServicio" and Dashboard.last_n_day_of_month(15).strftime("%Y%m") in data["fecha_de_la_info"].iloc[-1]:
+        elif tipo_registro=="OrdenesDeServicio" and Dashboard.prev_month().strftime("%Y%m") in data["fecha_de_la_info"].iloc[-1]: # Updates are on 10th.
             return "✔️"
         else:
             return "❌"
@@ -124,6 +119,9 @@ class Dashboard:
         tipo_registro = col1.selectbox('Selecciona una institución', Dashboard.get_tipo_registro(self))
         entidad = col2.selectbox('Selecciona una entidad', Dashboard.get_entidades(self, tipo_registro))
         data = Dashboard.get_csv(self, tipo_registro, entidad)
+
+        st.write( Dashboard.prev_month().strftime("%Y%m") in data["fecha_de_la_info"].iloc[-1] )
+
         col1, col2, col3, col4 =st.columns(4)       
         col1.metric("N° Registros almacenados", value="{:,}".format(sum(data["n_items"])),
             delta=str(round(data["n_items"].pct_change().iloc[-1], 2)*100) + "%")
